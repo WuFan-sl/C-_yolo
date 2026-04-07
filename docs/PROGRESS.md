@@ -30,6 +30,7 @@
 - 验证命令：`dotnet test` 通过，结果为 24 passed / 0 failed / 0 skipped。
 - 验证命令：`dotnet build examples/YoloDemo/YoloDemo.csproj` 通过，0 warnings / 0 errors。
 - 验证命令：在 `examples/YoloDemo/bin/Debug/net10.0-windows` 运行 `cmd /c "echo. | YoloDemo.exe"`；结果为每张示例图 1 个 `勺子` OBB 检测，置信度约 84% 到 95%，当前机器缺少 `cudnn64_9.dll` 因此 `ExecutionMode=CPU`。
+- 更新 `examples/YoloDemo/README.md`，补充从 demo 目录运行、模型/图片放置、`.pt` 转 `.onnx`、OBB metadata、CUDA/cuDNN、常见排错和本地文件提交规则。
 
 ## 当前状态
 - 已完成需求、架构、接口、数据模型、技术栈、测试策略文档规划；接口文档已扩展为可指导首版实现的 API 契约。
