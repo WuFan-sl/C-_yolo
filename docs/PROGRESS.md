@@ -11,7 +11,7 @@
 - 确认最终项目名和命名空间为 `EvanWu.YoloCuda`，并同步替换文档中的旧 `WuFan` 命名。
 - 通过用户级安装脚本安装并使用 `.NET SDK 10.0.201` 到 `~/.dotnet/dotnet-sdk-10`，未使用 sudo 或系统包管理器。
 - 创建 `EvanWu.YoloCuda.sln`、`src/EvanWu.YoloCuda` 类库和 `tests/EvanWu.YoloCuda.Tests` xUnit 测试项目。
-- 添加并锁定依赖：`Microsoft.ML.OnnxRuntime.Gpu` `1.24.4`、`SixLabors.ImageSharp` `3.1.12`、`FluentAssertions` `8.9.0`、`xunit` `2.9.3`。
+- 添加并锁定依赖：`Microsoft.ML.OnnxRuntime.Gpu.Windows` `1.24.4`、`SixLabors.ImageSharp` `3.1.12`、`FluentAssertions` `8.9.0`、`xunit` `2.9.3`。
 - 实现首版公共 API：`YoloDetectorOptions`、`YoloDetector`、`DetectionResult`、`BoundingBox`。
 - 实现核心模块：图片 letterbox 预处理、RGB NCHW float tensor 生成、YOLO detection 输出解析、坐标还原、NMS、ONNX Runtime CUDA session factory。
 - 添加 `IYoloInferenceSession` 适配层，允许单元测试注入 fake session，避免默认测试依赖真实 ONNX 模型或 GPU。
@@ -25,6 +25,11 @@
 - 为 `YoloDetector` 添加 `InputWidth` / `InputHeight` 只读属性，demo 可显示实际使用的模型输入尺寸，避免固定打印 `640x640` 造成误判。
 - 同步文档中的 ONNX Runtime GPU Windows 包名和 CPU fallback 诊断约束。
 - 验证命令：`dotnet test` 通过，结果为 23 passed / 0 failed / 0 skipped。
+- 读取 `args.yaml` 和 ONNX metadata 后确认当前 `best.onnx` 是 `task=obb` 模型；补充 ONNX metadata 中 `task` / `names` 的读取，并让未提供标签文件时回退到模型内置类别名。
+- 为 OBB 输出 `[x, y, w, h, class..., angle]` 增加解析：`DetectionResult` 新增可选 `OrientedBox`，`Box` 保留旋转框外接水平框以兼容现有调用方；demo 在有 `OrientedBox` 时绘制旋转框。
+- 验证命令：`dotnet test` 通过，结果为 24 passed / 0 failed / 0 skipped。
+- 验证命令：`dotnet build examples/YoloDemo/YoloDemo.csproj` 通过，0 warnings / 0 errors。
+- 验证命令：在 `examples/YoloDemo/bin/Debug/net10.0-windows` 运行 `cmd /c "echo. | YoloDemo.exe"`；结果为每张示例图 1 个 `勺子` OBB 检测，置信度约 84% 到 95%，当前机器缺少 `cudnn64_9.dll` 因此 `ExecutionMode=CPU`。
 
 ## 当前状态
 - 已完成需求、架构、接口、数据模型、技术栈、测试策略文档规划；接口文档已扩展为可指导首版实现的 API 契约。

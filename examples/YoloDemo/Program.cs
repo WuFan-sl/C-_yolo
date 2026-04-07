@@ -46,7 +46,7 @@ var options = new YoloDetectorOptions
 };
 
 Console.WriteLine($"Model: {Path.GetFileName(modelPath)}");
-Console.WriteLine($"Labels: {labelsPath ?? "(none)"}");
+Console.WriteLine($"Labels File: {labelsPath ?? "(none; using ONNX metadata when available)"}");
 Console.WriteLine($"Requested Input Size: {options.InputWidth}x{options.InputHeight}");
 Console.WriteLine($"Confidence Threshold: {options.ConfidenceThreshold}");
 Console.WriteLine($"NMS Threshold: {options.NmsThreshold}");
@@ -77,6 +77,7 @@ using var detector = new YoloDetector(options);
 
 Console.WriteLine($"Execution: {detector.ExecutionMode}");
 Console.WriteLine($"Actual Input Size: {detector.InputWidth}x{detector.InputHeight}");
+Console.WriteLine($"Model Task: {detector.ModelTask ?? "(unknown)"}");
 Console.WriteLine();
 
 foreach (var imagePath in imageFiles)
@@ -112,6 +113,10 @@ foreach (var imagePath in imageFiles)
             Console.WriteLine($"  Class: {result.Label} (ID: {result.ClassId})");
             Console.WriteLine($"  Confidence: {result.Confidence:P2}");
             Console.WriteLine($"  Box: X={result.Box.X:F1}, Y={result.Box.Y:F1}, W={result.Box.Width:F1}, H={result.Box.Height:F1}");
+            if (result.OrientedBox is { } orientedBox)
+            {
+                Console.WriteLine($"  OBB: CX={orientedBox.CenterX:F1}, CY={orientedBox.CenterY:F1}, W={orientedBox.Width:F1}, H={orientedBox.Height:F1}, Angle={orientedBox.RotationRadians:F3} rad");
+            }
         }
 
         using (var img = Image.FromFile(imagePath))
@@ -122,7 +127,14 @@ foreach (var imagePath in imageFiles)
             foreach (var result in results)
             {
                 var rect = new RectangleF(result.Box.X, result.Box.Y, result.Box.Width, result.Box.Height);
-                g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
+                if (result.OrientedBox is { } orientedBox)
+                {
+                    g.DrawPolygon(pen, GetRotatedCorners(orientedBox));
+                }
+                else
+                {
+                    g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
+                }
 
                 var label = $"{result.Label} {result.Confidence:P0}";
                 var size = g.MeasureString(label, font);
@@ -146,6 +158,11 @@ WaitForExit();
 
 static void WaitForExit()
 {
+    if (Console.IsInputRedirected)
+    {
+        return;
+    }
+
     Console.WriteLine("Press any key to exit...");
     Console.ReadKey();
 }
@@ -194,4 +211,26 @@ static string? FindLabelsFile(string modelsDir)
 
     var txtFiles = Directory.GetFiles(modelsDir, "*.txt");
     return txtFiles.FirstOrDefault();
+}
+
+static PointF[] GetRotatedCorners(OrientedBoundingBox box)
+{
+    float halfWidth = box.Width / 2f;
+    float halfHeight = box.Height / 2f;
+    float cos = MathF.Cos(box.RotationRadians);
+    float sin = MathF.Sin(box.RotationRadians);
+
+    var localCorners = new[]
+    {
+        new PointF(-halfWidth, -halfHeight),
+        new PointF(halfWidth, -halfHeight),
+        new PointF(halfWidth, halfHeight),
+        new PointF(-halfWidth, halfHeight)
+    };
+
+    return localCorners
+        .Select(point => new PointF(
+            box.CenterX + point.X * cos - point.Y * sin,
+            box.CenterY + point.X * sin + point.Y * cos))
+        .ToArray();
 }

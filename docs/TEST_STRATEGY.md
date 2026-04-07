@@ -10,6 +10,7 @@
 - letterbox 缩放比例、padding 和输出尺寸。
 - RGB 到 CHW float 张量转换。
 - YOLO 输出张量解析。
+- YOLO OBB 输出解析，包括角度通道、旋转框坐标和外接水平框。
 - confidence 阈值过滤。
 - NMS 去重。
 - 坐标从模型输入尺寸还原到原图坐标。
@@ -46,5 +47,5 @@ EVANWU_YOLO_ENABLE_GPU_TESTS=1 EVANWU_YOLO_TEST_MODEL=/path/to/model.onnx dotnet
 - 输入一张包含已知目标的图片，返回至少一个稳定检测结果。
 - 使用不存在的模型路径，返回明确文件错误。
 - 使用非法阈值，返回参数错误。
-- CUDA 初始化失败时，不静默降级 CPU，而是返回明确诊断。
+- CUDA 初始化失败时，不静默降级 CPU；如果允许 CPU fallback，必须通过 `ExecutionMode` 或日志返回明确诊断。
 - 多个高重叠框输入 NMS 后只保留最高置信度框。

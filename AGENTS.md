@@ -4,7 +4,7 @@
 - **Project**: C# YOLO CUDA class library for Windows + .NET.
 - **Core Purpose**: Provide a reusable .NET class library that runs YOLO object detection models on NVIDIA GPUs through ONNX Runtime CUDA.
 - **Primary Runtime**: Windows, C#, .NET 10 LTS, NVIDIA GPU, ONNX model format.
-- **Model Target**: YOLOv8/YOLO11 ONNX object detection models. Segmentation, pose, and OBB are out of scope for the first implementation.
+- **Model Target**: YOLOv8/YOLO11 ONNX object detection models, with limited YOLO OBB support when ONNX metadata marks `task=obb`. Segmentation and pose are out of scope for the first implementation.
 - **Current State**: Initial `EvanWu.YoloCuda` solution, class library, and xUnit test project have been scaffolded and implemented for the first detection-library baseline.
 
 ## Project Structure & Module Organization
@@ -19,7 +19,7 @@
 ## Current Focus & Quick Start
 > This section gives agents immediate context without requiring a full read of every document.
 
-- **Current Main Task**: Verify and refine the initial Windows C# .NET YOLO CUDA class library implementation.
+- **Current Main Task**: Verify and refine the Windows C# .NET YOLO CUDA class library implementation, including ONNX metadata-aware detection/OBB postprocessing.
 - **Primary Docs**:
   - Requirements: `docs/PRODUCT.md`
   - Architecture: `docs/ARCHITECTURE.md`

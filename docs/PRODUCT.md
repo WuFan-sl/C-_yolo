@@ -11,14 +11,14 @@
 
 ## 首版目标
 - 创建 `EvanWu.YoloCuda` 类库，提供简单的 YOLO 目标检测 API。
-- 支持 YOLOv8/YOLO11 ONNX 检测模型。
+- 支持 YOLOv8/YOLO11 ONNX 检测模型；当 ONNX metadata 标记 `task=obb` 时，支持返回旋转框信息。
 - 使用 ONNX Runtime CUDA Execution Provider 在 NVIDIA GPU 上运行。
-- 支持图片文件输入，返回类别、置信度和原图坐标系下的边界框。
+- 支持图片文件输入，返回类别、置信度和原图坐标系下的边界框；OBB 模型额外返回旋转框。
 - 提供 xUnit 单元测试，覆盖预处理、后处理和公共 API 行为。
 - 提供可选 GPU 集成测试，用于 Windows NVIDIA 环境中的真实 ONNX 推理验证。
 
 ## 非目标
-- 首版不支持 YOLO 分割、姿态估计、旋转框 OBB 或分类模型。
+- 首版不支持 YOLO 分割、姿态估计或分类模型；OBB 仅支持基于 ONNX metadata 的 YOLOv8/YOLO11 OBB 输出解析和旋转框绘制，不实现 OBB IoU/NMS。
 - 首版不实现训练、模型导出或标注工具。
 - 首版不提交大型 `.onnx` 模型文件。
 - 首版不提供 UI；UI 或桌面示例可在类库稳定后作为单独阶段实现。
@@ -33,4 +33,5 @@
 ## 关键风险
 - ONNX Runtime GPU 包与本机 CUDA/cuDNN 运行时不匹配会导致会话初始化失败。
 - 不同 YOLO 导出版本的输出张量形状可能不同，后处理必须做输入/输出形状校验。
+- OBB 模型如果缺失 `task=obb` metadata，输出形状可能与普通 detection 带 objectness 格式冲突，需要明确诊断或由调用方提供标签/任务信息。
 - 大模型文件不适合直接提交到普通 Git 仓库，需要明确模型资产管理策略。

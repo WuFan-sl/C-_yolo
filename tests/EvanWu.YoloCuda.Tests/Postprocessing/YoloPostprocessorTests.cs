@@ -76,6 +76,30 @@ public sealed class YoloPostprocessorTests
     }
 
     [Fact]
+    public void ProcessParsesObbOutputWithAngleWhenModelTaskIsObb()
+    {
+        var output = new DenseTensor<float>(new[] { 1, 6, 1 });
+        output[0, 0, 0] = 50;
+        output[0, 1, 0] = 40;
+        output[0, 2, 0] = 20;
+        output[0, 3, 0] = 10;
+        output[0, 4, 0] = 0.80f;
+        output[0, 5, 0] = MathF.PI / 2f;
+
+        var postprocessor = new YoloPostprocessor(0.25f, 0.45f, new[] { "spoon" }, modelTask: "obb");
+        var letterbox = new LetterboxResult(100, 80, 100, 80, 1f, 0f, 0f);
+
+        IReadOnlyList<DetectionResult> results = postprocessor.Process(output, letterbox);
+
+        results.Should().ContainSingle();
+        results[0].ClassId.Should().Be(0);
+        results[0].Label.Should().Be("spoon");
+        results[0].Confidence.Should().BeApproximately(0.80f, 0.001f);
+        results[0].Box.Should().Be(new BoundingBox(45, 30, 10, 20));
+        results[0].OrientedBox.Should().Be(new OrientedBoundingBox(50, 40, 20, 10, MathF.PI / 2f));
+    }
+
+    [Fact]
     public void ProcessParsesDetectionsFirstOutputWhenDetectionCountIsLargerThanAttributeCount()
     {
         var output = new DenseTensor<float>(new[] { 1, 7, 6 });

@@ -63,11 +63,12 @@ dotnet run --project examples/YoloDemo
 - **Class** - 类别名称和 ID
 - **Confidence** - 置信度（百分比）
 - **Box** - 边界框坐标（X, Y, Width, Height）
+- **OBB** - 当模型 metadata 为 `task=obb` 时，输出旋转框中心、宽高和弧度角
 
 ### 渲染输出
 
 - **output/ 目录** - PNG 格式的渲染结果图
-- 绿色边界框（2px）
+- 绿色边界框（2px）；OBB 模型会绘制旋转框
 - 黑色半透明背景 + 绿色文字标签
 
 ## 输出文件名规则

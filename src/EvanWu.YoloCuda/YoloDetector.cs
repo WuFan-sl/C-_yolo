@@ -18,9 +18,10 @@ public sealed class YoloDetector : IDisposable
         ValidateOptions(options);
 
         _options = options;
-        _labels = LoadLabels(options.LabelsPath);
         _session = OnnxCudaSessionFactory.Create(options, out string mode, out int modelWidth, out int modelHeight);
+        _labels = LoadLabels(options.LabelsPath, _session.ModelLabels);
         ExecutionMode = mode;
+        ModelTask = _session.ModelTask;
 
         if (modelWidth != options.InputWidth || modelHeight != options.InputHeight)
         {
@@ -54,6 +55,11 @@ public sealed class YoloDetector : IDisposable
     /// </summary>
     public int InputHeight => _options.InputHeight;
 
+    /// <summary>
+    /// Model task recorded in ONNX metadata, when present.
+    /// </summary>
+    public string? ModelTask { get; }
+
     internal YoloDetector(YoloDetectorOptions options, IYoloInferenceSession session, IReadOnlyList<string>? labels = null)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -61,9 +67,10 @@ public sealed class YoloDetector : IDisposable
         ValidateOptions(options);
 
         _options = options;
-        _labels = labels ?? LoadLabels(options.LabelsPath);
         _session = session;
+        _labels = labels ?? LoadLabels(options.LabelsPath, session.ModelLabels);
         ExecutionMode = "Internal";
+        ModelTask = session.ModelTask;
 
         ValidateModelShape(_session, options);
     }
@@ -82,7 +89,7 @@ public sealed class YoloDetector : IDisposable
         PreprocessingResult input = preprocessor.Preprocess(imagePath, _options.InputWidth, _options.InputHeight);
 
         Tensor<float> output = _session.Run(input.Tensor);
-        var postprocessor = new YoloPostprocessor(_options.ConfidenceThreshold, _options.NmsThreshold, _labels);
+        var postprocessor = new YoloPostprocessor(_options.ConfidenceThreshold, _options.NmsThreshold, _labels, ModelTask);
 
         return postprocessor.Process(output, input.Letterbox);
     }
@@ -142,11 +149,11 @@ public sealed class YoloDetector : IDisposable
         }
     }
 
-    private static IReadOnlyList<string> LoadLabels(string? labelsPath)
+    private static IReadOnlyList<string> LoadLabels(string? labelsPath, IReadOnlyList<string>? modelLabels = null)
     {
         if (string.IsNullOrWhiteSpace(labelsPath))
         {
-            return Array.Empty<string>();
+            return modelLabels ?? Array.Empty<string>();
         }
 
         return File.ReadLines(labelsPath)

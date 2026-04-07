@@ -6,7 +6,7 @@
 首版范围：
 - 运行环境：Windows x64 + .NET 10 LTS。
 - GPU 后端：NVIDIA CUDA，通过 ONNX Runtime CUDA Execution Provider。
-- 模型类型：YOLOv8/YOLO11 ONNX object detection 模型。
+- 模型类型：YOLOv8/YOLO11 ONNX object detection 模型；当 ONNX metadata 标记 `task=obb` 时支持 OBB 输出解析。
 - 输入类型：单张图片路径。
 - 输出类型：原图坐标系下的目标检测框列表。
 
@@ -14,7 +14,7 @@
 - 静默 CPU fallback；如果实现允许 CPU fallback，必须通过诊断属性或日志显式暴露实际执行后端。
 - DirectML/WinML 后端。
 - 视频流、批量推理、异步推理 API。
-- YOLO 分割、姿态估计、旋转框 OBB 或分类接口。
+- YOLO 分割、姿态估计或分类接口；OBB 支持仅限 ONNX metadata 可识别的 YOLOv8/YOLO11 OBB 输出。
 
 ## NuGet 与依赖契约
 类库实现依赖：
@@ -75,6 +75,7 @@ public sealed class YoloDetector : IDisposable
     public string ExecutionMode { get; }
     public int InputWidth { get; }
     public int InputHeight { get; }
+    public string? ModelTask { get; }
 
     public IReadOnlyList<DetectionResult> Detect(string imagePath);
 
@@ -91,6 +92,7 @@ public sealed class YoloDetector : IDisposable
 只读诊断属性：
 - `ExecutionMode`：实际使用的执行后端，例如 `CUDA` 或 `CPU`。
 - `InputWidth` / `InputHeight`：实际用于预处理的模型输入尺寸；当模型声明固定输入尺寸且与 options 不一致时，以模型尺寸为准。
+- `ModelTask`：ONNX metadata 中记录的模型任务，例如 `detect` 或 `obb`；缺失时为 `null`。
 
 `Detect(string imagePath)` 契约：
 - `imagePath` 必须非空且指向可读取图片文件。
@@ -114,7 +116,8 @@ public sealed record DetectionResult(
     int ClassId,
     string Label,
     float Confidence,
-    BoundingBox Box);
+    BoundingBox Box,
+    OrientedBoundingBox? OrientedBox = null);
 ```
 
 字段契约：
@@ -122,6 +125,7 @@ public sealed record DetectionResult(
 - `Label`：类别名称；如果未提供标签文件或类别越界，使用 `class_{ClassId}`。
 - `Confidence`：最终置信度，范围 `[0, 1]`。
 - `Box`：原图坐标系下的边界框。
+- `OrientedBox`：可选旋转框；仅当模型 metadata 标记 `task=obb` 且输出包含角度通道时返回。
 
 排序规则：
 - `Detect()` 返回结果按 `Confidence` 降序排列。
@@ -143,6 +147,22 @@ public readonly record struct BoundingBox(
 - 输出前必须裁剪到原图边界内。
 - 首版允许 `float` 小数坐标，由上层决定是否取整绘制。
 
+## OrientedBoundingBox
+```csharp
+public readonly record struct OrientedBoundingBox(
+    float CenterX,
+    float CenterY,
+    float Width,
+    float Height,
+    float RotationRadians);
+```
+
+坐标语义：
+- `CenterX` / `CenterY` 表示原图坐标系下的旋转框中心。
+- `Width` / `Height` 表示旋转框宽高。
+- `RotationRadians` 表示模型输出的旋转角，单位为弧度。
+- 对 OBB 输出，`DetectionResult.Box` 同时返回旋转框的外接水平框，便于兼容只消费水平框的调用方。
+
 ## 模型 I/O 约定
 首版支持的 ONNX 输入：
 - 单输入张量。
@@ -153,6 +173,7 @@ public readonly record struct BoundingBox(
 首版支持的 YOLO 输出：
 - YOLOv8/YOLO11 detection head 导出的常见单输出张量。
 - 支持 `[x, y, w, h, class...]` 和在标签数量可确认时的 `[x, y, w, h, objectness, class...]` 属性排列。
+- 当 ONNX metadata `task=obb` 且输出形状匹配时，支持 `[x, y, w, h, class..., angle]` 属性排列。
 - 后处理应能识别常见输出排列，并在无法确认时抛出 `NotSupportedException`。
 - 框坐标解析后必须基于 letterbox 元数据还原到原图坐标。
 

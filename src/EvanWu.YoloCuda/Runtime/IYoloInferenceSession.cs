@@ -12,5 +12,9 @@ internal interface IYoloInferenceSession : IDisposable
 
     IReadOnlyList<int> OutputDimensions { get; }
 
+    string? ModelTask { get; }
+
+    IReadOnlyList<string> ModelLabels { get; }
+
     Tensor<float> Run(DenseTensor<float> inputTensor);
 }

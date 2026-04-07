@@ -45,6 +45,10 @@ public sealed class YoloDetectorBehaviorTests
 
         public IReadOnlyList<int> OutputDimensions => new[] { 1, 84, 8400 };
 
+        public string? ModelTask => null;
+
+        public IReadOnlyList<string> ModelLabels => Array.Empty<string>();
+
         public Tensor<float> Run(DenseTensor<float> inputTensor)
         {
             return new DenseTensor<float>(new[] { 1, 84, 0 });
