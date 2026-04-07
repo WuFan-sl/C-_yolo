@@ -186,6 +186,16 @@ examples/YoloDemo/output/
 Microsoft.ML.OnnxRuntime.Gpu.Windows 1.24.4
 ```
 
+已在本机验证的 GPU 环境：
+
+```text
+GPU: NVIDIA GeForce RTX 3060
+Driver: 576.02
+CUDA: 12.9
+cuDNN: 9.20
+.NET SDK: 10.0.201
+```
+
 如果运行时出现类似错误：
 
 ```text
@@ -202,6 +212,28 @@ Execution: CPU
 - 安装与 ONNX Runtime GPU `1.24.4` 匹配的 NVIDIA CUDA/cuDNN 运行时。
 - 确认 `cudnn64_9.dll` 等 DLL 能被进程加载，例如在系统 `PATH` 或应用运行目录可见。
 - 重新运行 demo，确认 `Execution: CUDA`。
+
+本机已验证的修复方式是把 cuDNN 9.20 for CUDA 12.9 的 `bin` 目录加入用户级 `PATH`：
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+  'Path',
+  'C:\Program Files\NVIDIA\CUDNN\v9.20\bin\12.9\x64;' + [Environment]::GetEnvironmentVariable('Path', 'User'),
+  'User')
+```
+
+如果当前终端还没有刷新用户环境变量，可以临时对当前进程生效后再运行：
+
+```powershell
+$env:PATH = 'C:\Program Files\NVIDIA\CUDNN\v9.20\bin\12.9\x64;' + $env:PATH
+.\YoloDemo.exe
+```
+
+修复成功后的关键输出应包含：
+
+```text
+Execution: CUDA
+```
 
 ## 常见问题
 

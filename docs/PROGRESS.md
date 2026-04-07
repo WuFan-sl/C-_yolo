@@ -30,15 +30,18 @@
 - 验证命令：`dotnet test` 通过，结果为 24 passed / 0 failed / 0 skipped。
 - 验证命令：`dotnet build examples/YoloDemo/YoloDemo.csproj` 通过，0 warnings / 0 errors。
 - 验证命令：在 `examples/YoloDemo/bin/Debug/net10.0-windows` 运行 `cmd /c "echo. | YoloDemo.exe"`；结果为每张示例图 1 个 `勺子` OBB 检测，置信度约 84% 到 95%，当前机器缺少 `cudnn64_9.dll` 因此 `ExecutionMode=CPU`。
+- 修复 Windows CUDA 推理环境：确认 `nvidia-smi` 显示 RTX 3060、Driver `576.02`、CUDA `12.9`，定位 ONNX Runtime CUDA provider 缺少 `cudnn64_9.dll` 的根因，并将 `C:\Program Files\NVIDIA\CUDNN\v9.20\bin\12.9\x64` 加入用户级 `PATH`。
+- 验证命令：在 `examples/YoloDemo/bin/Debug/net10.0-windows` 运行 `$env:PATH = 'C:\Program Files\NVIDIA\CUDNN\v9.20\bin\12.9\x64;' + $env:PATH; .\YoloDemo.exe`；结果显示 `Execution: CUDA`，11 张示例图片全部完成 GPU 推理。
 - 更新 `examples/YoloDemo/README.md`，补充从 demo 目录运行、模型/图片放置、`.pt` 转 `.onnx`、OBB metadata、CUDA/cuDNN、常见排错和本地文件提交规则。
+- 更新 `examples/YoloDemo/README.md`，记录本机已验证的 CUDA/cuDNN 环境、用户级 `PATH` 修复命令和 `Execution: CUDA` 验收输出。
 - 清理 `.gitignore`：忽略 `AGENTS.md`、`.pt`、`imgs/`、`output/`、`.vs/`、`.venv/` 等本地资产/机器文件；`AGENTS.md` 仅保留为本地代理指令文件，不再纳入项目提交。
 
 ## 当前状态
 - 已完成需求、架构、接口、数据模型、技术栈、测试策略文档规划；接口文档已扩展为可指导首版实现的 API 契约。
 - 已完成首版类库源码和 xUnit 测试项目；默认单元测试在当前 Linux 开发环境中通过。
 - GPU 集成测试已加 `[Trait("Category", "Gpu")]`，并要求 `EVANWU_YOLO_ENABLE_GPU_TESTS=1` 和 `EVANWU_YOLO_TEST_MODEL` 才尝试真实 detector 初始化。
+- Windows 本机 demo 已完成真实 CUDA 推理验证，关键输出为 `Execution: CUDA`。
 
 ## 下一步
-- 在 Windows + NVIDIA + CUDA/cuDNN 环境中准备本地 YOLOv8/YOLO11 detection ONNX 模型。
 - 运行 `EVANWU_YOLO_ENABLE_GPU_TESTS=1 EVANWU_YOLO_TEST_MODEL=/path/to/model.onnx dotnet test --filter Category=Gpu` 验证真实 CUDA session 初始化。
 - 后续可补充端到端样例图片与更完整的模型输出形状兼容性测试。
