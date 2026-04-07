@@ -40,10 +40,10 @@ internal sealed class ImagePreprocessor
                 {
                     Size = new Size(resizedWidth, resizedHeight),
                     Mode = ResizeMode.Stretch,
-                    Sampler = KnownResamplers.NearestNeighbor
+                    Sampler = KnownResamplers.Triangle
                 }));
 
-            using var canvas = new Image<Rgb24>(inputWidth, inputHeight, new Rgb24(0, 0, 0));
+            using var canvas = new Image<Rgb24>(inputWidth, inputHeight, new Rgb24(114, 114, 114));
             CopyIntoCanvas(resized, canvas, padX, padY);
 
             var tensor = new DenseTensor<float>(new[] { 1, 3, inputHeight, inputWidth });

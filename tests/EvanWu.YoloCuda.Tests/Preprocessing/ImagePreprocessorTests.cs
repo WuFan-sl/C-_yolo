@@ -71,6 +71,11 @@ public sealed class ImagePreprocessorTests
             result.Letterbox.Scale.Should().Be(2f);
             result.Letterbox.PadX.Should().Be(0f);
             result.Letterbox.PadY.Should().Be(2f);
+
+            const float expectedPadding = 114f / 255f;
+            result.Tensor[0, 0, 0, 0].Should().BeApproximately(expectedPadding, 0.001f);
+            result.Tensor[0, 1, 0, 0].Should().BeApproximately(expectedPadding, 0.001f);
+            result.Tensor[0, 2, 0, 0].Should().BeApproximately(expectedPadding, 0.001f);
         }
         finally
         {

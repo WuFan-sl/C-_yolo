@@ -11,14 +11,14 @@
 - 输出类型：原图坐标系下的目标检测框列表。
 
 首版不提供：
-- CPU fallback。
+- 静默 CPU fallback；如果实现允许 CPU fallback，必须通过诊断属性或日志显式暴露实际执行后端。
 - DirectML/WinML 后端。
 - 视频流、批量推理、异步推理 API。
 - YOLO 分割、姿态估计、旋转框 OBB 或分类接口。
 
 ## NuGet 与依赖契约
 类库实现依赖：
-- `Microsoft.ML.OnnxRuntime.Gpu`：创建 CUDA `InferenceSession` 并执行 ONNX 推理。
+- `Microsoft.ML.OnnxRuntime.Gpu.Windows`：创建 CUDA `InferenceSession` 并执行 ONNX 推理。
 - `SixLabors.ImageSharp`：读取图片、缩放、像素转换和预处理。
 
 调用方运行时必须确保：
@@ -26,7 +26,7 @@
 - ONNX Runtime GPU 所需 CUDA/cuDNN DLL 能被进程加载。
 - 模型文件和标签文件路径对当前进程可读。
 
-CUDA provider 初始化失败时，首版必须抛出明确异常，不允许静默降级 CPU。
+CUDA provider 初始化失败时，首版必须抛出明确异常，或通过诊断属性/日志明确暴露 CPU fallback；不允许调用方无法感知的静默降级。
 
 ## 命名空间
 公共 API 统一放在：
@@ -72,6 +72,10 @@ public sealed class YoloDetector : IDisposable
 {
     public YoloDetector(YoloDetectorOptions options);
 
+    public string ExecutionMode { get; }
+    public int InputWidth { get; }
+    public int InputHeight { get; }
+
     public IReadOnlyList<DetectionResult> Detect(string imagePath);
 
     public void Dispose();
@@ -83,6 +87,10 @@ public sealed class YoloDetector : IDisposable
 - 读取并缓存标签文件。
 - 创建 ONNX Runtime CUDA `InferenceSession`。
 - 校验模型输入/输出形状是否符合首版 YOLO detection 预期。
+
+只读诊断属性：
+- `ExecutionMode`：实际使用的执行后端，例如 `CUDA` 或 `CPU`。
+- `InputWidth` / `InputHeight`：实际用于预处理的模型输入尺寸；当模型声明固定输入尺寸且与 options 不一致时，以模型尺寸为准。
 
 `Detect(string imagePath)` 契约：
 - `imagePath` 必须非空且指向可读取图片文件。
@@ -144,6 +152,7 @@ public readonly record struct BoundingBox(
 
 首版支持的 YOLO 输出：
 - YOLOv8/YOLO11 detection head 导出的常见单输出张量。
+- 支持 `[x, y, w, h, class...]` 和在标签数量可确认时的 `[x, y, w, h, objectness, class...]` 属性排列。
 - 后处理应能识别常见输出排列，并在无法确认时抛出 `NotSupportedException`。
 - 框坐标解析后必须基于 letterbox 元数据还原到原图坐标。
 

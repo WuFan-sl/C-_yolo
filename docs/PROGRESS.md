@@ -20,6 +20,11 @@
 - 验证命令：`dotnet build EvanWu.YoloCuda.sln --no-restore` 通过，0 warnings / 0 errors。
 - 验证命令：`dotnet test EvanWu.YoloCuda.sln` 通过，结果为 21 passed / 0 failed / 0 skipped。
 - 验证命令：`dotnet test EvanWu.YoloCuda.sln --filter Category=Gpu` 通过，结果为 1 passed / 0 failed / 0 skipped；当前未设置 `EVANWU_YOLO_ENABLE_GPU_TESTS=1` 和真实模型路径，因此只验证 GPU 测试门控，不代表真实 CUDA 推理已验证。
+- 排查 `best.onnx` 转换后检测效果差的问题：确认示例模型输入为 `[1, 3, 320, 320]`、输出为 `[1, 6, 2100]`，并修复单类别带 objectness 输出被误当成两类别输出的问题。
+- 预处理对齐 Ultralytics 常见 letterbox 行为：padding 改为 `114,114,114`，缩放采样改为 `KnownResamplers.Triangle`，降低 ONNX 推理输入分布偏差。
+- 为 `YoloDetector` 添加 `InputWidth` / `InputHeight` 只读属性，demo 可显示实际使用的模型输入尺寸，避免固定打印 `640x640` 造成误判。
+- 同步文档中的 ONNX Runtime GPU Windows 包名和 CPU fallback 诊断约束。
+- 验证命令：`dotnet test` 通过，结果为 23 passed / 0 failed / 0 skipped。
 
 ## 当前状态
 - 已完成需求、架构、接口、数据模型、技术栈、测试策略文档规划；接口文档已扩展为可指导首版实现的 API 契约。

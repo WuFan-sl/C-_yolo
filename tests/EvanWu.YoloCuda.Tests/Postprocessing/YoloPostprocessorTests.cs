@@ -53,6 +53,58 @@ public sealed class YoloPostprocessorTests
     }
 
     [Fact]
+    public void ProcessParsesChannelsFirstOutputWithObjectnessWhenLabelCountMatches()
+    {
+        var output = new DenseTensor<float>(new[] { 1, 6, 1 });
+        output[0, 0, 0] = 50;
+        output[0, 1, 0] = 40;
+        output[0, 2, 0] = 20;
+        output[0, 3, 0] = 10;
+        output[0, 4, 0] = 0.80f;
+        output[0, 5, 0] = 0.50f;
+
+        var postprocessor = new YoloPostprocessor(0.25f, 0.45f, new[] { "spoon" });
+        var letterbox = new LetterboxResult(100, 80, 100, 80, 1f, 0f, 0f);
+
+        IReadOnlyList<DetectionResult> results = postprocessor.Process(output, letterbox);
+
+        results.Should().ContainSingle();
+        results[0].ClassId.Should().Be(0);
+        results[0].Label.Should().Be("spoon");
+        results[0].Confidence.Should().BeApproximately(0.40f, 0.001f);
+        results[0].Box.Should().Be(new BoundingBox(40, 35, 20, 10));
+    }
+
+    [Fact]
+    public void ProcessParsesDetectionsFirstOutputWhenDetectionCountIsLargerThanAttributeCount()
+    {
+        var output = new DenseTensor<float>(new[] { 1, 7, 6 });
+        output[0, 0, 0] = 50;
+        output[0, 0, 1] = 40;
+        output[0, 0, 2] = 20;
+        output[0, 0, 3] = 10;
+        output[0, 0, 4] = 0.80f;
+        output[0, 0, 5] = 0.50f;
+
+        output[0, 1, 0] = 10;
+        output[0, 1, 1] = 10;
+        output[0, 1, 2] = 10;
+        output[0, 1, 3] = 10;
+        output[0, 1, 4] = 0.10f;
+        output[0, 1, 5] = 0.50f;
+
+        var postprocessor = new YoloPostprocessor(0.25f, 0.45f, new[] { "spoon" });
+        var letterbox = new LetterboxResult(100, 80, 100, 80, 1f, 0f, 0f);
+
+        IReadOnlyList<DetectionResult> results = postprocessor.Process(output, letterbox);
+
+        results.Should().ContainSingle();
+        results[0].Label.Should().Be("spoon");
+        results[0].Confidence.Should().BeApproximately(0.40f, 0.001f);
+        results[0].Box.Should().Be(new BoundingBox(40, 35, 20, 10));
+    }
+
+    [Fact]
     public void ProcessRejectsUnsupportedOutputShape()
     {
         var output = new DenseTensor<float>(new[] { 1, 4, 1 });

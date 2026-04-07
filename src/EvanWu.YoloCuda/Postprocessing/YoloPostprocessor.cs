@@ -27,11 +27,11 @@ internal sealed class YoloPostprocessor
         }
 
         var detections = new List<DetectionResult>();
-        if (dimensions[1] >= 5)
+        if (LooksLikeAttributeCount(dimensions[1], dimensions[2]))
         {
             ParseChannelsFirst(output, dimensions[1], dimensions[2], letterbox, detections);
         }
-        else if (dimensions[2] >= 5)
+        else if (LooksLikeAttributeCount(dimensions[2], dimensions[1]))
         {
             ParseDetectionsFirst(output, dimensions[1], dimensions[2], letterbox, detections);
         }
@@ -61,7 +61,7 @@ internal sealed class YoloPostprocessor
             float centerY = output[0, 1, detectionIndex];
             float width = output[0, 2, detectionIndex];
             float height = output[0, 3, detectionIndex];
-            AddDetection(output, letterbox, detections, detectionIndex, 4, attributeCount, centerX, centerY, width, height, channelsFirst: true);
+            AddDetection(output, letterbox, detections, detectionIndex, attributeCount, centerX, centerY, width, height, channelsFirst: true);
         }
     }
 
@@ -83,7 +83,7 @@ internal sealed class YoloPostprocessor
             float centerY = output[0, detectionIndex, 1];
             float width = output[0, detectionIndex, 2];
             float height = output[0, detectionIndex, 3];
-            AddDetection(output, letterbox, detections, detectionIndex, 4, attributeCount, centerX, centerY, width, height, channelsFirst: false);
+            AddDetection(output, letterbox, detections, detectionIndex, attributeCount, centerX, centerY, width, height, channelsFirst: false);
         }
     }
 
@@ -92,7 +92,6 @@ internal sealed class YoloPostprocessor
         LetterboxResult letterbox,
         List<DetectionResult> detections,
         int detectionIndex,
-        int classStartIndex,
         int attributeCount,
         float centerX,
         float centerY,
@@ -100,18 +99,23 @@ internal sealed class YoloPostprocessor
         float height,
         bool channelsFirst)
     {
+        bool hasObjectness = HasObjectness(attributeCount);
+        int classStartIndex = hasObjectness ? 5 : 4;
+        float scoreMultiplier = hasObjectness
+            ? ReadAttribute(output, detectionIndex, 4, channelsFirst)
+            : 1f;
+
         int classId = -1;
         float confidence = float.MinValue;
         for (int attributeIndex = classStartIndex; attributeIndex < attributeCount; attributeIndex++)
         {
-            float classScore = channelsFirst
-                ? output[0, attributeIndex, detectionIndex]
-                : output[0, detectionIndex, attributeIndex];
+            float classScore = ReadAttribute(output, detectionIndex, attributeIndex, channelsFirst);
+            float score = scoreMultiplier * classScore;
 
-            if (classScore > confidence)
+            if (score > confidence)
             {
                 classId = attributeIndex - classStartIndex;
-                confidence = classScore;
+                confidence = score;
             }
         }
 
@@ -131,6 +135,36 @@ internal sealed class YoloPostprocessor
             GetLabel(classId),
             confidence,
             restoredBox.Value));
+    }
+
+    private bool HasObjectness(int attributeCount)
+    {
+        return _labels.Count > 0 && attributeCount == _labels.Count + 5;
+    }
+
+    private static float ReadAttribute(Tensor<float> output, int detectionIndex, int attributeIndex, bool channelsFirst)
+    {
+        return channelsFirst
+            ? output[0, attributeIndex, detectionIndex]
+            : output[0, detectionIndex, attributeIndex];
+    }
+
+    private bool LooksLikeAttributeCount(int candidateAttributeCount, int otherDimension)
+    {
+        if (candidateAttributeCount < 5)
+        {
+            return false;
+        }
+
+        int expectedWithoutObjectness = _labels.Count + 4;
+        int expectedWithObjectness = _labels.Count + 5;
+        if (_labels.Count > 0
+            && (candidateAttributeCount == expectedWithoutObjectness || candidateAttributeCount == expectedWithObjectness))
+        {
+            return true;
+        }
+
+        return otherDimension < 5 || candidateAttributeCount <= otherDimension;
     }
 
     private string GetLabel(int classId)

@@ -8,7 +8,7 @@
 - 推理模型：YOLOv8/YOLO11 ONNX detection model。
 
 ## 核心依赖
-- `Microsoft.ML.OnnxRuntime.Gpu`：ONNX Runtime C# 绑定和 CUDA Execution Provider。
+- `Microsoft.ML.OnnxRuntime.Gpu.Windows`：Windows ONNX Runtime C# 绑定和 CUDA Execution Provider。
 - `SixLabors.ImageSharp`：图片读取、像素访问、缩放和预处理。
 - `xunit`：测试框架。
 - `FluentAssertions`：测试断言增强。
@@ -16,7 +16,7 @@
 ## 版本基线
 - .NET SDK：`10.0.201` 已用于当前 Linux 开发环境验证。
 - Target framework：`net10.0-windows`。
-- `Microsoft.ML.OnnxRuntime.Gpu`：`1.24.4`。
+- `Microsoft.ML.OnnxRuntime.Gpu.Windows`：`1.24.4`。
 - `SixLabors.ImageSharp`：`3.1.12`。
 - `FluentAssertions`：`8.9.0`。
 - `xunit`：`2.9.3`。
@@ -43,5 +43,5 @@ EVANWU_YOLO_ENABLE_GPU_TESTS=1 EVANWU_YOLO_TEST_MODEL=/path/to/model.onnx dotnet
 - .NET support policy: https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core
 - ONNX Runtime C# docs: https://onnxruntime.ai/docs/get-started/with-csharp.html
 - ONNX Runtime CUDA provider docs: https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html
-- ONNX Runtime GPU NuGet: https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.Gpu/
+- ONNX Runtime GPU Windows NuGet: https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.Gpu.Windows/
 - ImageSharp NuGet: https://www.nuget.org/packages/SixLabors.ImageSharp/

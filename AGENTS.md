@@ -41,7 +41,7 @@
   - `dotnet sln add tests/EvanWu.YoloCuda.Tests/EvanWu.YoloCuda.Tests.csproj`
 - Add test project reference: `dotnet add tests/EvanWu.YoloCuda.Tests/EvanWu.YoloCuda.Tests.csproj reference src/EvanWu.YoloCuda/EvanWu.YoloCuda.csproj`
 - Runtime packages:
-  - `Microsoft.ML.OnnxRuntime.Gpu` `1.24.4`
+  - `Microsoft.ML.OnnxRuntime.Gpu.Windows` `1.24.4`
   - `SixLabors.ImageSharp` `3.1.12`
 - Test packages:
   - `FluentAssertions` `8.9.0`

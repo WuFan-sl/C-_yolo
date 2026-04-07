@@ -19,11 +19,18 @@ public sealed class YoloDetector : IDisposable
 
         _options = options;
         _labels = LoadLabels(options.LabelsPath);
-        _session = OnnxCudaSessionFactory.Create(options);
+        _session = OnnxCudaSessionFactory.Create(options, out string mode, out int modelWidth, out int modelHeight);
+        ExecutionMode = mode;
+
+        if (modelWidth != options.InputWidth || modelHeight != options.InputHeight)
+        {
+            Console.WriteLine($"[Warning] Model expects {modelWidth}x{modelHeight}, options specify {options.InputWidth}x{options.InputHeight}. Using model dimensions.");
+            _options = _options with { InputWidth = modelWidth, InputHeight = modelHeight };
+        }
 
         try
         {
-            ValidateModelShape(_session, options);
+            ValidateModelShape(_session, _options);
         }
         catch
         {
@@ -31,6 +38,21 @@ public sealed class YoloDetector : IDisposable
             throw;
         }
     }
+
+    /// <summary>
+    /// Indicates the execution device used: "CUDA" or "CPU".
+    /// </summary>
+    public string ExecutionMode { get; }
+
+    /// <summary>
+    /// Effective model input width used for preprocessing.
+    /// </summary>
+    public int InputWidth => _options.InputWidth;
+
+    /// <summary>
+    /// Effective model input height used for preprocessing.
+    /// </summary>
+    public int InputHeight => _options.InputHeight;
 
     internal YoloDetector(YoloDetectorOptions options, IYoloInferenceSession session, IReadOnlyList<string>? labels = null)
     {
@@ -41,6 +63,7 @@ public sealed class YoloDetector : IDisposable
         _options = options;
         _labels = labels ?? LoadLabels(options.LabelsPath);
         _session = session;
+        ExecutionMode = "Internal";
 
         ValidateModelShape(_session, options);
     }
