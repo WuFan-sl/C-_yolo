@@ -6,3 +6,8 @@ models/
 *.user
 *.suo
 *.onnx
+*.pt
+.vs/
+.venv/
+imgs/
+output/
